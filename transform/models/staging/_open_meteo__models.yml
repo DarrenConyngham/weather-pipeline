@@ -1,0 +1,22 @@
+models:
+  - name: stg_open_meteo__weather_hourly
+    description: One row per location, hour and raw file. Overlapping runs mean (location, hour) repeats here.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [location_id, observed_at_utc, source_file]
+    columns: &staging_keys
+      - name: location_id
+        data_tests: [not_null]
+      - name: observed_at_utc
+        data_tests: [not_null]
+      - name: ingested_at_utc
+        data_tests: [not_null]
+
+  - name: stg_open_meteo__air_quality_hourly
+    description: One row per location, hour and raw file. Overlapping runs mean (location, hour) repeats here.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [location_id, observed_at_utc, source_file]
+    columns: *staging_keys

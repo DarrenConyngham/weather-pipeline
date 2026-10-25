@@ -1,0 +1,14 @@
+models:
+  - name: int_weather_hourly_latest
+    description: Latest-ingested weather per (location_id, observed_at_utc).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [location_id, observed_at_utc]
+
+  - name: int_air_quality_hourly_latest
+    description: Latest-ingested air quality per (location_id, observed_at_utc).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [location_id, observed_at_utc]
