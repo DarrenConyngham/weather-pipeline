@@ -5,6 +5,7 @@ uv run --env-file .env python -m ingestion.run --dataset weather --location cpt_
 """
 
 import argparse
+import logging
 import os
 import sys
 from datetime import UTC, datetime
@@ -55,22 +56,43 @@ def main(argv: list[str] | None = None) -> int:
             sys.exit(f"Unknown location(s): {sorted(unknown)}")
         locations = [loc for loc in locations if loc["location_id"] in args.location]
 
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    # httpx logs every request at INFO; our "wrote ..." lines already cover that.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
     # One timestamp per run, so every file from the same run shares it.
     ingested_at = datetime.now(UTC).replace(microsecond=0)
 
+    # A failure in one dataset/location doesn't stop the others: we keep as much
+    # good data as possible, then exit non-zero so the scheduled run still goes red.
+    failures = []
     with httpx.Client(timeout=30) as client:
         for dataset_name, dataset in datasets.items():
             for location in locations:
+                label = f"{dataset_name}/{location['location_id']}"
                 params = open_meteo.build_params(location, dataset["hourly"], args.past_days)
-                requested_url, response = open_meteo.fetch(client, dataset["url"], params)
+                try:
+                    requested_url, response = open_meteo.fetch(client, dataset["url"], params)
+                    # Validate before writing: the raw zone is immutable, so bad data would stay.
+                    open_meteo.validate_response(response, dataset["hourly"])
+                except (open_meteo.FetchError, open_meteo.InvalidResponseError) as exc:
+                    print(f"FAILED {label}: {exc}", file=sys.stderr)
+                    failures.append(label)
+                    continue
                 record = open_meteo.build_raw_record(
                     location["location_id"], requested_url, ingested_at, response
                 )
                 key = storage.raw_key(dataset_name, location["location_id"], ingested_at)
                 path = storage.write_raw(data_root, key, record)
-                hours = len(response.get("hourly", {}).get("time", []))
-                print(f"wrote {path} ({hours} hours)")
+                print(f"wrote {path} ({len(response['hourly']['time'])} hours)")
 
+    if failures:
+        print(
+            f"{len(failures)} of {len(datasets) * len(locations)} fetches failed: "
+            f"{', '.join(failures)}",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
