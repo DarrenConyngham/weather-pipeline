@@ -1,6 +1,5 @@
 # Open-Meteo datasets we ingest. Check the Open-Meteo docs before changing
 # variable names: they differ slightly between endpoints.
-# Phase 1 only wires up weather; air_quality is added in phase 2.
 weather:
   url: https://api.open-meteo.com/v1/forecast
   hourly:
@@ -12,3 +11,17 @@ weather:
     - wind_gusts_10m
     - cloud_cover
     - pressure_msl
+
+# Outside Europe this comes from the CAMS global model (~40 km grid), so nearby
+# locations often share one grid cell and return identical values.
+air_quality:
+  url: https://air-quality-api.open-meteo.com/v1/air-quality
+  hourly:
+    - pm10
+    - pm2_5
+    - nitrogen_dioxide
+    - ozone
+    - sulphur_dioxide
+    - carbon_monoxide
+    - european_aqi
+    - us_aqi

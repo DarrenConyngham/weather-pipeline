@@ -32,6 +32,8 @@ def load_hourly(parquet_path: str) -> list[dict]:
             strftime(observed_at_local, '%Y-%m-%dT%H:%M') as observed_at_local,
             temperature_c
         from read_parquet(?)
+        -- The mart is a full outer join, so an hour can have air quality but no weather.
+        where temperature_c is not null
         order by location_id, observed_at_local
     """
     cursor = duckdb.execute(query, [parquet_path])

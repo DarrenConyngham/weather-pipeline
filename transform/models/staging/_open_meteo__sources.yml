@@ -9,3 +9,7 @@ sources:
     tables:
       - name: weather
         description: One file per location per ingestion run, from the forecast endpoint.
+      - name: air_quality
+        description: >-
+          One file per location per ingestion run, from the air-quality endpoint (CAMS global
+          model, ~40 km grid, so nearby locations often return identical values).
