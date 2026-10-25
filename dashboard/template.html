@@ -17,6 +17,8 @@
       --axis: #c3c2b7;
       --border: rgba(11, 11, 11, 0.10);
       --series-1: #2a78d6;
+      --series-2: #eb6834;
+      --series-3: #1baf7a;
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
@@ -30,6 +32,8 @@
         --axis: #383835;
         --border: rgba(255, 255, 255, 0.10);
         --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
       }
     }
     :root[data-theme="dark"] {
@@ -43,6 +47,8 @@
       --axis: #383835;
       --border: rgba(255, 255, 255, 0.10);
       --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
     }
 
     * { box-sizing: border-box; }
@@ -68,6 +74,7 @@
     .tile { margin: 0; }
     .tile dt { color: var(--text-secondary); font-size: 0.875rem; }
     .tile dd { margin: 4px 0 0; font-size: 2rem; font-weight: 600; }
+    .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
     .tile .note { display: block; font-size: 0.8125rem; font-weight: 400; color: var(--muted); }
     #chart { width: 100%; }
     details summary { cursor: pointer; color: var(--text-secondary); font-weight: 600; }
@@ -75,7 +82,7 @@
     table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
     th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
     th { color: var(--text-secondary); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
-    td:last-child, th:last-child { text-align: right; }
+    td:not(:first-child), th:not(:first-child) { text-align: right; }
     footer { color: var(--muted); font-size: 0.8125rem; margin-top: 24px; }
     footer a { color: inherit; }
   </style>
@@ -83,24 +90,22 @@
 <body>
   <main>
     <h1>Cape Town weather</h1>
-    <p class="sub">$location_name · hourly, Cape Town local time (SAST), from $first_at</p>
+    <p class="sub">Hourly, Cape Town local time (SAST), from $first_at</p>
 
     <dl class="tiles">
-      <div class="card tile"><dt>Latest temperature</dt><dd>$latest_temp °C<span class="note">at $latest_at</span></dd></div>
-      <div class="card tile"><dt>Low</dt><dd>$min_temp °C</dd></div>
-      <div class="card tile"><dt>High</dt><dd>$max_temp °C</dd></div>
+$tiles
     </dl>
 
     <section class="card">
       <h2>Temperature (°C)</h2>
-      <div id="chart" role="img" aria-label="Line chart of hourly temperature in °C, local time"></div>
+      <div id="chart" role="img" aria-label="Line chart of hourly temperature in °C per location, local time"></div>
     </section>
 
     <details class="card">
       <summary>Show data table</summary>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Local time</th><th>Temperature (°C)</th></tr></thead>
+          <thead><tr><th>Local time</th>$table_header</tr></thead>
           <tbody>
 $table_rows
           </tbody>
@@ -139,9 +144,12 @@ $table_rows
           labelFontSize: 12,
           titleFontSize: 12,
         },
-        line: { color: token("--series-1") },
-        point: { color: token("--series-1"), stroke: token("--surface"), strokeWidth: 2 },
+        legend: { labelColor: token("--text-secondary"), labelFontSize: 12, symbolType: "stroke" },
+        // Categorical colours in config order; build.py pins the domain to match.
+        range: { category: [token("--series-1"), token("--series-2"), token("--series-3")] },
+        point: { stroke: token("--surface"), strokeWidth: 2 },
         rule: { color: token("--muted") },
+        text: { color: token("--text-secondary"), fontSize: 12 },
       };
     }
 
