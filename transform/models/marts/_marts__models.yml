@@ -1,0 +1,63 @@
+# Range tests ignore NULLs, so hours missing one dataset (full outer join) still pass.
+models:
+  - name: dim_locations
+    description: One row per location.
+    columns:
+      - name: location_id
+        data_tests: [unique, not_null]
+      - name: location_name
+        data_tests: [not_null]
+
+  - name: fct_hourly_conditions
+    description: Weather and air quality per (location_id, observed_at_utc).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [location_id, observed_at_utc]
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_id
+      - name: observed_at_utc
+        data_tests: [not_null]
+      - name: observed_at_local
+        data_tests: [not_null]
+      - name: temperature_c
+        data_tests:
+          - dbt_utils.accepted_range: {arguments: {min_value: -10, max_value: 50}}
+      - name: relative_humidity_pct
+        data_tests:
+          - dbt_utils.accepted_range: {arguments: {min_value: 0, max_value: 100}}
+      - name: cloud_cover_pct
+        data_tests:
+          - dbt_utils.accepted_range: {arguments: {min_value: 0, max_value: 100}}
+      - name: wind_direction_deg
+        data_tests:
+          - dbt_utils.accepted_range: {arguments: {min_value: 0, max_value: 360}}
+      - name: precipitation_mm
+        data_tests: &non_negative
+          - dbt_utils.accepted_range: {arguments: {min_value: 0}}
+      - name: wind_speed_kmh
+        data_tests: *non_negative
+      - name: wind_gusts_kmh
+        data_tests: *non_negative
+      - name: pm10_ugm3
+        data_tests: *non_negative
+      - name: pm2_5_ugm3
+        data_tests: *non_negative
+      - name: nitrogen_dioxide_ugm3
+        data_tests: *non_negative
+      - name: ozone_ugm3
+        data_tests: *non_negative
+      - name: sulphur_dioxide_ugm3
+        data_tests: *non_negative
+      - name: carbon_monoxide_ugm3
+        data_tests: *non_negative
+      - name: european_aqi
+        data_tests: *non_negative
+      - name: us_aqi
+        data_tests: *non_negative

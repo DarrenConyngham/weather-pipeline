@@ -6,6 +6,12 @@ sources:
       external_location: >-
         read_json('{{ env_var('DATA_ROOT') }}/raw/open_meteo/{name}/*/*.json.gz',
         filename = true, hive_partitioning = true)
+    # Ingestion runs daily, so 36 h without a new file means a run was missed; 72 h means
+    # several were, and the raw zone is going stale.
+    loaded_at_field: cast(ingested_at_utc as timestamptz)
+    freshness:
+      warn_after: {count: 36, period: hour}
+      error_after: {count: 72, period: hour}
     tables:
       - name: weather
         description: One file per location per ingestion run, from the forecast endpoint.

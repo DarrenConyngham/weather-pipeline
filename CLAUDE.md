@@ -189,7 +189,7 @@ In GitHub Actions, credentials come from repository secrets or an assumed IAM ro
 Work through these phases in order, and don't skip ahead.
 
 - [x] **Phase 1: walking skeleton.** Ingest one dataset for one location to a local `DATA_ROOT`, then build one staging model, one mart and one chart.
-- [ ] **Phase 2: complete and robust.** Add all locations and both datasets, retries, response validation, the dedupe layer, unit tests and dbt tests.
+- [x] **Phase 2: complete and robust.** Add all locations and both datasets, retries, response validation, the dedupe layer, unit tests and dbt tests.
 - [ ] **Phase 3: run in the cloud.** Switch `DATA_ROOT` to S3. Set up `pipeline.yml` on a daily cron (around 04:00 UTC) plus `workflow_dispatch`, set up `ci.yml`, and deploy the dashboard to GitHub Pages.
 - [ ] **Phase 4: production habits.** Replace access keys with GitHub OIDC and an IAM role, add failure notifications and freshness alerts, add a backfill workflow, define the AWS resources in Terraform, and polish the README with an architecture diagram.
 - [ ] **Stretch goals:** add incremental dbt models, compare the forecast API with the archive API (ERA5) for the same hours, add another source (for example a South African weather or air quality feed), or port the pipeline to Option B (Lambda, EventBridge and Athena).

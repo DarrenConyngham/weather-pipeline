@@ -1,0 +1,16 @@
+seeds:
+  - name: locations
+    description: >-
+      Copy of config/locations.yml, the source of truth that ingestion reads.
+      tests/test_locations_seed.py fails if the two drift apart.
+    config:
+      column_types:
+        location_id: varchar
+        name: varchar
+        latitude: double
+        longitude: double
+    columns:
+      - name: location_id
+        data_tests:
+          - unique
+          - not_null
