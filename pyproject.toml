@@ -15,6 +15,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff>=0.6",
+    "sqlfluff>=4.4.0",
 ]
 
 [tool.ruff]
@@ -23,3 +24,16 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.sqlfluff.core]
+dialect = "duckdb"
+# The jinja templater stubs dbt's ref()/source() so linting needs no database or DATA_ROOT.
+templater = "jinja"
+max_line_length = 100
+# AM04: `select *` is the normal dbt pass-through in intermediate models; staging pins the columns.
+# RF03: misreads DuckDB struct access (response.hourly.time) as a table qualifier.
+# ST06: we order columns grain keys first, then measures, not by expression type.
+exclude_rules = "AM04,RF03,ST06"
+
+[tool.sqlfluff.templater.jinja]
+apply_dbt_builtins = true
