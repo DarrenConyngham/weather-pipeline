@@ -1,0 +1,25 @@
+# Secrets
+.env
+
+# Local data lake (DATA_ROOT=./data)
+data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# dbt
+transform/target/
+transform/dbt_packages/
+transform/logs/
+transform/.user.yml
+*.duckdb
+*.duckdb.wal
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/

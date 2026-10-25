@@ -1,0 +1,12 @@
+- location_id: cpt_cbd
+  name: Cape Town CBD
+  latitude: -33.9249
+  longitude: 18.4241
+- location_id: newlands
+  name: Newlands
+  latitude: -33.9760
+  longitude: 18.4620
+- location_id: muizenberg
+  name: Muizenberg
+  latitude: -34.1083
+  longitude: 18.4695

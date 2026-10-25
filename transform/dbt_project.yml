@@ -1,0 +1,21 @@
+name: weather_pipeline
+version: "0.1.0"
+config-version: 2
+profile: weather_pipeline
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  weather_pipeline:
+    # Staging and intermediate are views: cheap, always reflect the latest raw files.
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    # Marts are written out as Parquet files to {DATA_ROOT}/curated/{model_name}.parquet.
+    marts:
+      +materialized: external
+      +format: parquet

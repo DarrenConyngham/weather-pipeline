@@ -1,0 +1,10 @@
+# Env vars only, no secrets. Paths are relative to where dbt is run (the repo root).
+weather_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Scratch database for views; everything in it can be rebuilt from the raw zone.
+      path: "{{ env_var('DUCKDB_PATH', 'transform/weather.duckdb') }}"
+      external_root: "{{ env_var('DATA_ROOT') }}/curated"
+      threads: 1
