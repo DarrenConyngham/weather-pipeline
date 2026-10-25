@@ -19,3 +19,8 @@ models:
     marts:
       +materialized: external
       +format: parquet
+
+vars:
+  # European AQI from which an hour counts as poor air: the start of the "Poor" band.
+  # Keep in step with EAQI_BANDS in dashboard/build.py.
+  eaqi_poor_threshold: 60

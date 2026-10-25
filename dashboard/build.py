@@ -24,6 +24,7 @@ OUTPUT_PATH = DASHBOARD_DIR / "build" / "index.html"
 LOCATIONS_PATH = DASHBOARD_DIR.parent / "config" / "locations.yml"
 
 # European AQI bands as (lower bound, name), from the EEA index used by Open-Meteo.
+# The "Poor" bound is also dbt's eaqi_poor_threshold var (transform/dbt_project.yml).
 EAQI_BANDS = [
     (0, "Good"),
     (20, "Fair"),

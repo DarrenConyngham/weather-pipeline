@@ -1,0 +1,36 @@
+# Unit tests check logic with hand-written inputs; the data tests in _marts__models.yml
+# check that real outputs look valid. Run alone with: dbt test --select "test_type:unit"
+unit_tests:
+  - name: hourly_local_time_is_two_hours_ahead_and_can_cross_midnight
+    description: 22:00 UTC is 00:00 SAST the next day; this decides which local day an hour joins.
+    model: fct_hourly_conditions
+    given:
+      - input: ref('int_weather_hourly_latest')
+        rows:
+          - {location_id: cpt_cbd, observed_at_utc: "2026-10-24 21:00:00", temperature_c: 15.0}
+          - {location_id: cpt_cbd, observed_at_utc: "2026-10-24 22:00:00", temperature_c: 14.0}
+      - input: ref('int_air_quality_hourly_latest')
+        rows:
+          - {location_id: cpt_cbd, observed_at_utc: "2026-10-24 22:00:00", european_aqi: 30}
+    expect:
+      rows:
+        - {location_id: cpt_cbd, observed_at_local: "2026-10-24 23:00:00", temperature_c: 15.0, european_aqi: null}
+        - {location_id: cpt_cbd, observed_at_local: "2026-10-25 00:00:00", temperature_c: 14.0, european_aqi: 30}
+
+  - name: daily_groups_by_local_date_and_counts_partial_hours
+    description: >-
+      Hours group by local date; NULLs don't count as observed; an AQI exactly at the
+      threshold (60) counts as poor; a day with fewer than 24 hours is not complete.
+    model: fct_daily_conditions
+    given:
+      - input: ref('fct_hourly_conditions')
+        rows:
+          - {location_id: cpt_cbd, observed_at_local: "2026-10-24 23:00:00", temperature_c: 10.0, european_aqi: 70}
+          - {location_id: cpt_cbd, observed_at_local: "2026-10-25 00:00:00", temperature_c: 20.0, european_aqi: 59}
+          - {location_id: cpt_cbd, observed_at_local: "2026-10-25 01:00:00", temperature_c: null, european_aqi: 60}
+    expect:
+      rows:
+        - {location_id: cpt_cbd, local_date: "2026-10-24", hours_observed: 1, weather_hours: 1, air_quality_hours: 1,
+           min_temperature_c: 10.0, max_temperature_c: 10.0, hours_eaqi_poor_or_worse: 1, is_complete_day: false}
+        - {location_id: cpt_cbd, local_date: "2026-10-25", hours_observed: 2, weather_hours: 1, air_quality_hours: 2,
+           min_temperature_c: 20.0, max_temperature_c: 20.0, hours_eaqi_poor_or_worse: 1, is_complete_day: false}

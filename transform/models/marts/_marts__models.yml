@@ -61,3 +61,51 @@ models:
         data_tests: *non_negative
       - name: us_aqi
         data_tests: *non_negative
+
+  - name: fct_daily_conditions
+    description: >-
+      Daily weather and air quality per (location_id, local_date), on the SAST date.
+      Partial days are kept; check is_complete_day before comparing days.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [location_id, local_date]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "min_temperature_c <= max_temperature_c"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "hours_eaqi_poor_or_worse <= air_quality_hours"
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_id
+      - name: local_date
+        data_tests: [not_null]
+      - name: hours_observed
+        data_tests: &hour_count
+          - not_null
+          - dbt_utils.accepted_range: {arguments: {min_value: 1, max_value: 24}}
+      - name: weather_hours
+        data_tests: &hour_count_or_zero
+          - not_null
+          - dbt_utils.accepted_range: {arguments: {min_value: 0, max_value: 24}}
+      - name: air_quality_hours
+        data_tests: *hour_count_or_zero
+      - name: hours_eaqi_poor_or_worse
+        data_tests: *hour_count_or_zero
+      - name: is_complete_day
+        data_tests: [not_null]
+      - name: min_temperature_c
+        data_tests: &temperature
+          - dbt_utils.accepted_range: {arguments: {min_value: -10, max_value: 50}}
+      - name: max_temperature_c
+        data_tests: *temperature
+      - name: total_precipitation_mm
+        data_tests: *non_negative
+      - name: worst_european_aqi
+        data_tests: *non_negative
