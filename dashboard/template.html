@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cape Town Weather</title>
+  <style>
+    /* Colour tokens: light by default, dark via OS setting or data-theme. */
+    :root {
+      color-scheme: light;
+      --page: #f9f9f7;
+      --surface: #fcfcfb;
+      --text-primary: #0b0b0b;
+      --text-secondary: #52514e;
+      --muted: #898781;
+      --grid: #e1e0d9;
+      --axis: #c3c2b7;
+      --border: rgba(11, 11, 11, 0.10);
+      --series-1: #2a78d6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --page: #0d0d0d;
+        --surface: #1a1a19;
+        --text-primary: #f0efec;
+        --text-secondary: #c3c2b7;
+        --muted: #898781;
+        --grid: #2c2c2a;
+        --axis: #383835;
+        --border: rgba(255, 255, 255, 0.10);
+        --series-1: #3987e5;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --series-1: #3987e5;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--text-primary);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 16px 48px; }
+    h1 { font-size: 1.75rem; margin: 0 0 4px; }
+    h2 { font-size: 1rem; margin: 0 0 12px; color: var(--text-secondary); font-weight: 600; }
+    .sub { margin: 0 0 24px; color: var(--text-secondary); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .tile { margin: 0; }
+    .tile dt { color: var(--text-secondary); font-size: 0.875rem; }
+    .tile dd { margin: 4px 0 0; font-size: 2rem; font-weight: 600; }
+    .tile .note { display: block; font-size: 0.8125rem; font-weight: 400; color: var(--muted); }
+    #chart { width: 100%; }
+    details summary { cursor: pointer; color: var(--text-secondary); font-weight: 600; }
+    .table-wrap { max-height: 320px; overflow-y: auto; margin-top: 12px; }
+    table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+    th { color: var(--text-secondary); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
+    td:last-child, th:last-child { text-align: right; }
+    footer { color: var(--muted); font-size: 0.8125rem; margin-top: 24px; }
+    footer a { color: inherit; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Cape Town weather</h1>
+    <p class="sub">$location_name · hourly, Cape Town local time (SAST), from $first_at</p>
+
+    <dl class="tiles">
+      <div class="card tile"><dt>Latest temperature</dt><dd>$latest_temp °C<span class="note">at $latest_at</span></dd></div>
+      <div class="card tile"><dt>Low</dt><dd>$min_temp °C</dd></div>
+      <div class="card tile"><dt>High</dt><dd>$max_temp °C</dd></div>
+    </dl>
+
+    <section class="card">
+      <h2>Temperature (°C)</h2>
+      <div id="chart" role="img" aria-label="Line chart of hourly temperature in °C, local time"></div>
+    </section>
+
+    <details class="card">
+      <summary>Show data table</summary>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Local time</th><th>Temperature (°C)</th></tr></thead>
+          <tbody>
+$table_rows
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <footer>
+      Weather data from <a href="https://open-meteo.com/">Open-Meteo</a>. Generated $generated_at.
+    </footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/vega@5.30.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.21.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0"></script>
+  <script id="chart-spec" type="application/json">$chart_spec</script>
+  <script>
+    const spec = JSON.parse(document.getElementById("chart-spec").textContent);
+
+    function token(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // Vega can't read CSS variables, so pass the current token values in as config.
+    function chartConfig() {
+      return {
+        background: token("--surface"),
+        font: "system-ui, -apple-system, Segoe UI, sans-serif",
+        view: { stroke: null },
+        axis: {
+          labelColor: token("--muted"),
+          titleColor: token("--text-secondary"),
+          gridColor: token("--grid"),
+          domainColor: token("--axis"),
+          tickColor: token("--axis"),
+          labelFontSize: 12,
+          titleFontSize: 12,
+        },
+        line: { color: token("--series-1") },
+        point: { color: token("--series-1"), stroke: token("--surface"), strokeWidth: 2 },
+        rule: { color: token("--muted") },
+      };
+    }
+
+    function render() {
+      const dark = token("color-scheme") === "dark";
+      vegaEmbed("#chart", spec, {
+        actions: false,
+        renderer: "svg",
+        config: chartConfig(),
+        tooltip: { theme: dark ? "dark" : "light" },
+      });
+    }
+
+    render();
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+  </script>
+</body>
+</html>

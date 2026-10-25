@@ -11,6 +11,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Dashboard build output (regenerated from the curated zone)
+dashboard/build/
+
 # dbt
 transform/target/
 transform/dbt_packages/

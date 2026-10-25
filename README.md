@@ -1,8 +1,8 @@
 # Cape Town Weather & Air Quality Pipeline
 
-A small batch data pipeline: Open-Meteo APIs → raw zone (gzipped JSON) → dbt + DuckDB → static Evidence dashboard, orchestrated with GitHub Actions. See `CLAUDE.md` for the full design.
+A small batch data pipeline: Open-Meteo APIs → raw zone (gzipped JSON) → dbt + DuckDB → static dashboard page, orchestrated with GitHub Actions. See `CLAUDE.md` for the full design.
 
-**Status:** Phase 1 (walking skeleton). Weather ingestion and the dbt models work against a local folder.
+**Status:** Phase 1 (walking skeleton) complete. Weather ingestion, the dbt models and the dashboard page work against a local folder.
 
 ## Setup
 
@@ -30,3 +30,13 @@ uv run --env-file .env dbt build --project-dir transform --profiles-dir transfor
 
 Models: `stg_open_meteo__weather_hourly` (view) → `int_weather_hourly_latest` (view, latest ingest wins)
 → `fct_hourly_conditions` (written to `data/curated/fct_hourly_conditions.parquet`).
+
+## Build the dashboard
+
+```bash
+uv run --env-file .env python dashboard/build.py
+open dashboard/build/index.html
+```
+
+`dashboard/build.py` reads the curated Parquet with DuckDB and fills `dashboard/template.html`,
+producing a single static page. The chart is drawn in the browser with Vega-Lite (loaded from a CDN).
