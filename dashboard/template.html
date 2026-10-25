@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cape Town Weather</title>
+  <title>Cape Town Weather & Air</title>
   <style>
     /* Colour tokens: light by default, dark via OS setting or data-theme. */
     :root {
@@ -17,6 +17,8 @@
       --axis: #c3c2b7;
       --border: rgba(11, 11, 11, 0.10);
       --series-1: #2a78d6;
+      --series-2: #eb6834;
+      --series-3: #1baf7a;
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
@@ -30,6 +32,8 @@
         --axis: #383835;
         --border: rgba(255, 255, 255, 0.10);
         --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
       }
     }
     :root[data-theme="dark"] {
@@ -43,6 +47,8 @@
       --axis: #383835;
       --border: rgba(255, 255, 255, 0.10);
       --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
     }
 
     * { box-sizing: border-box; }
@@ -57,6 +63,7 @@
     h1 { font-size: 1.75rem; margin: 0 0 4px; }
     h2 { font-size: 1rem; margin: 0 0 12px; color: var(--text-secondary); font-weight: 600; }
     .sub { margin: 0 0 24px; color: var(--text-secondary); }
+    .card-note { margin: -8px 0 12px; color: var(--muted); font-size: 0.8125rem; }
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -68,39 +75,49 @@
     .tile { margin: 0; }
     .tile dt { color: var(--text-secondary); font-size: 0.875rem; }
     .tile dd { margin: 4px 0 0; font-size: 2rem; font-weight: 600; }
+    .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
     .tile .note { display: block; font-size: 0.8125rem; font-weight: 400; color: var(--muted); }
-    #chart { width: 100%; }
+    /* vega-embed makes its container inline-block; without this a "container"-width chart collapses to 0 px. */
+    .chart { width: 100%; }
     details summary { cursor: pointer; color: var(--text-secondary); font-weight: 600; }
     .table-wrap { max-height: 320px; overflow-y: auto; margin-top: 12px; }
     table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
     th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
     th { color: var(--text-secondary); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
-    td:last-child, th:last-child { text-align: right; }
+    td:not(:first-child), th:not(:first-child) { text-align: right; }
     footer { color: var(--muted); font-size: 0.8125rem; margin-top: 24px; }
     footer a { color: inherit; }
   </style>
 </head>
 <body>
   <main>
-    <h1>Cape Town weather</h1>
-    <p class="sub">$location_name · hourly, Cape Town local time (SAST), from $first_at</p>
+    <h1>Cape Town weather &amp; air quality</h1>
+    <p class="sub">Hourly, Cape Town local time (SAST), from $first_at</p>
 
     <dl class="tiles">
-      <div class="card tile"><dt>Latest temperature</dt><dd>$latest_temp °C<span class="note">at $latest_at</span></dd></div>
-      <div class="card tile"><dt>Low</dt><dd>$min_temp °C</dd></div>
-      <div class="card tile"><dt>High</dt><dd>$max_temp °C</dd></div>
+$tiles
     </dl>
 
     <section class="card">
       <h2>Temperature (°C)</h2>
-      <div id="chart" role="img" aria-label="Line chart of hourly temperature in °C, local time"></div>
+      <div id="chart" class="chart" role="img" aria-label="Line chart of hourly temperature in °C per location, local time"></div>
+    </section>
+
+    <dl class="tiles">
+$aqi_tile
+    </dl>
+
+    <section class="card">
+      <h2>Air quality (European AQI)</h2>
+      <p class="card-note">One value for all of Cape Town: the air quality model (CAMS) uses a ~40 km grid, so our suburbs share a cell. Lower is better.</p>
+      <div id="aqi-chart" class="chart" role="img" aria-label="Line chart of hourly European Air Quality Index for Cape Town, with band boundaries, local time"></div>
     </section>
 
     <details class="card">
       <summary>Show data table</summary>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Local time</th><th>Temperature (°C)</th></tr></thead>
+          <thead><tr><th>Local time</th>$table_header</tr></thead>
           <tbody>
 $table_rows
           </tbody>
@@ -109,7 +126,7 @@ $table_rows
     </details>
 
     <footer>
-      Weather data from <a href="https://open-meteo.com/">Open-Meteo</a>. Generated $generated_at.
+      Weather and air quality (CAMS) data from <a href="https://open-meteo.com/">Open-Meteo</a>. Generated $generated_at.
     </footer>
   </main>
 
@@ -117,8 +134,12 @@ $table_rows
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.21.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0"></script>
   <script id="chart-spec" type="application/json">$chart_spec</script>
+  <script id="aqi-chart-spec" type="application/json">$aqi_chart_spec</script>
   <script>
-    const spec = JSON.parse(document.getElementById("chart-spec").textContent);
+    const specs = {
+      "#chart": JSON.parse(document.getElementById("chart-spec").textContent),
+      "#aqi-chart": JSON.parse(document.getElementById("aqi-chart-spec").textContent),
+    };
 
     function token(name) {
       return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -139,20 +160,27 @@ $table_rows
           labelFontSize: 12,
           titleFontSize: 12,
         },
-        line: { color: token("--series-1") },
-        point: { color: token("--series-1"), stroke: token("--surface"), strokeWidth: 2 },
+        legend: { labelColor: token("--text-secondary"), labelFontSize: 12, symbolType: "stroke" },
+        // Categorical colours in config order; build.py pins the domain to match.
+        range: { category: [token("--series-1"), token("--series-2"), token("--series-3")] },
+        // Neutral ink for single-series charts; colour-encoded charts override it.
+        line: { color: token("--text-secondary") },
+        point: { color: token("--text-secondary"), stroke: token("--surface"), strokeWidth: 2 },
         rule: { color: token("--muted") },
+        text: { color: token("--text-secondary"), fontSize: 12 },
       };
     }
 
     function render() {
       const dark = token("color-scheme") === "dark";
-      vegaEmbed("#chart", spec, {
-        actions: false,
-        renderer: "svg",
-        config: chartConfig(),
-        tooltip: { theme: dark ? "dark" : "light" },
-      });
+      for (const [target, spec] of Object.entries(specs)) {
+        vegaEmbed(target, spec, {
+          actions: false,
+          renderer: "svg",
+          config: chartConfig(),
+          tooltip: { theme: dark ? "dark" : "light" },
+        });
+      }
     }
 
     render();
